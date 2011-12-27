@@ -19,6 +19,12 @@
 
 #define UNKNOWN_EDIT_DISTANCE (-1)
 
+
+/* macros
+***********/
+
+#define min(a,b)  ((a) <= (b)) ? (a) : (b)
+
 /* structures
 ***************/
 
@@ -94,6 +100,57 @@ int addwordtovect(P_VECTOR_DICTWORD pv_word,
   return (EXITCODE_SUCCESS);
 }    
 
+int calc_edit_dist(char *string1, char *string2)
+{
+    int i = 0;
+    int j = 0;
+    int strlen1 = string1 ? strlen(string1) : 0;
+    int strlen2 = string2 ? strlen(string2) : 0;
+
+    char *prev_row = NULL;
+    char *curr_row = NULL;
+    char *tmp = NULL; 
+
+    int edit_dist = UNKNOWN_EDIT_DISTANCE;
+    
+    prev_row = malloc(strlen2 + 1);
+    if(!prev_row) {
+        return UNKNOWN_EDIT_DISTANCE;
+    }
+
+    curr_row = malloc(strlen2 + 1);
+    if(!curr_row) {
+        free(prev_row);
+        return UNKNOWN_EDIT_DISTANCE;
+    }
+
+    //Initialize the very first row
+    for(j=0; j <= strlen2 ; j++)
+        prev_row[j] = j;
+
+    for(i = 0; i < strlen1; i ++) {
+        curr_row[0] = i+1;
+        for(j = 0; j < strlen2; j++) {
+            if(curr_row[i] == prev_row[j]) {
+                curr_row[j+1] = prev_row[j];
+            }
+            else {
+                curr_row[j+1] = min(min(prev_row[j],prev_row[j+1]),curr_row[j]);
+                curr_row[j+1]++;
+            }
+           }
+        tmp = prev_row;
+        prev_row = curr_row;
+        curr_row = tmp;
+    }
+
+    edit_dist = prev_row[j];
+
+    free(prev_row);
+    free(curr_row);
+
+    return edit_dist;
+}
 
 /* main 
 ****************/
@@ -148,8 +205,17 @@ int main(int argc, char **argv)
   v_word.pwordarray = realloc(v_word.pwordarray,
                               v_word.curr_size * sizeof(EDITDIST));
 
+  for(i=0; i < v_word.curr_size; i++)
+  {
+      v_word.pwordarray[i].edit_dist = calc_edit_dist(
+                                        argv[1], 
+                                        v_word.pwordarray[i].dict_word);
+  }
+
   for(i=v_word.curr_size-1; i >= 0; i--) {
-      printf("%s\n", v_word.pwordarray[i].dict_word);
+      printf("%s\t%s\t%d\n", argv[1], 
+                     v_word.pwordarray[i].dict_word,
+                     v_word.pwordarray[i].edit_dist);
   }
 
   freewordvect(&v_word);
