@@ -112,6 +112,8 @@ int calc_edit_dist(char *string1, char *string2)
     char *tmp = NULL; 
 
     int edit_dist = UNKNOWN_EDIT_DISTANCE;
+
+    printf("calc_edit_dist: Comparing %s with %s\n",string1, string2);
     
     prev_row = malloc(strlen2 + 1);
     if(!prev_row) {
@@ -128,16 +130,28 @@ int calc_edit_dist(char *string1, char *string2)
     for(j=0; j <= strlen2 ; j++)
         prev_row[j] = j;
 
+    printf(" \t  \t");
+    for(j=0;j<strlen2;j++)
+       printf("%c\t",string2[j]); 
+     
+    printf("\n");
+    printf(" \t");
+    for(j=0;j<=strlen2;j++)
+       printf("%02d\t",prev_row[j]); 
+  
     for(i = 0; i < strlen1; i ++) {
         curr_row[0] = i+1;
+        printf("\n");
+        printf("%c\t%02d\t",string1[i],curr_row[0]);
         for(j = 0; j < strlen2; j++) {
-            if(curr_row[i] == prev_row[j]) {
+            if(string1[i] == string2[j]) {
                 curr_row[j+1] = prev_row[j];
             }
             else {
                 curr_row[j+1] = min(min(prev_row[j],prev_row[j+1]),curr_row[j]);
                 curr_row[j+1]++;
             }
+            printf("%02d\t",curr_row[j+1]);
            }
         tmp = prev_row;
         prev_row = curr_row;
@@ -149,11 +163,25 @@ int calc_edit_dist(char *string1, char *string2)
     free(prev_row);
     free(curr_row);
 
+    printf("\n");
+    printf("\n");
+
     return edit_dist;
 }
 
 /* main 
 ****************/
+/*int main(int argc, char **argv)
+{
+   int edit_dist = UNKNOWN_EDIT_DISTANCE;
+
+   edit_dist = calc_edit_dist("hi","hi");
+
+   printf("\n");
+}
+*/
+
+
 int main(int argc, char **argv)
 {
   FILE *fp = NULL;
