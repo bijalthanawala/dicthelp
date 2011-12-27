@@ -1,3 +1,7 @@
 create Makefile
 Make separate Makefile target - debug
 Make separate Makefile target - unittest
+Add all dictionary words in the min-heap (key = edit distance)
+Show all dictionary words with edit distance <= THRESHOLD_EDIT_DISTANCE
+Command line: Support THRESHOLD_EDIT_DISTANCE 
+Commnad line: Support dictionary name
