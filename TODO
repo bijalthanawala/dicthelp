@@ -1,13 +1,15 @@
-* DONE - Create Makefile
+TODO
 * Make separate Makefile target - debug
 * Make separate Makefile target - unittest
-* DONE - Add all dictionary words in the min-heap (key = edit distance)
-* DONE - Show all dictionary words with edit distance <= THRESHOLD_EDIT_DISTANCE
-* DONE - Command line: Support THRESHOLD_EDIT_DISTANCE 
 * Commnad line: Support dictionary name
 * ONGOING - Meaningful comments
+* Make output less geeky
+
+DONE
+* DONE - Show all dictionary words with edit distance <= THRESHOLD_EDIT_DISTANCE
+* DONE - Command line: Support THRESHOLD_EDIT_DISTANCE 
+* DONE - Create Makefile
 * DONE - If exact match is found (edit distance = 0) then show other
          suggestions only if requested (via command line option)
 * DONE - Write 'Usage' for newly supported command line options
-* Make output less geeky
-
+* DONE - Add all dictionary words in the min-heap (key = edit distance)
