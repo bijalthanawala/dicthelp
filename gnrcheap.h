@@ -1,14 +1,11 @@
 
 /********************************************************************
-*  Project: hffcmprss
-*  Description: Compression program that uses huffman coding
 *  Licence: The MIT license
 *  Author:  See accompanied AUTHORS.txt
 *
 *  File: gnrcheap.h
 *  Description: Generic heap header file
 *  
-*
 ********************************************************************/
 
 #ifndef GENERIC_HEAP

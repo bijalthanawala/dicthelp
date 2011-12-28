@@ -1,7 +1,5 @@
 
 /********************************************************************
-*  Project: hffcmprss
-*  Description: Compression program that uses huffman coding
 *  Licence: The MIT license
 *  Author:  See accompanied AUTHORS.txt
 *
