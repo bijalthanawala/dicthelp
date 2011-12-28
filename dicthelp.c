@@ -52,6 +52,7 @@ typedef struct {
 } VECTOR_DICTWORD, *P_VECTOR_DICTWORD;    
 
 typedef struct {
+    BOOL help;
     BOOL verbose;
     int editdist_threshold; 
     char  *dict_file;
@@ -61,22 +62,35 @@ typedef struct {
 
 /* routines
 ****************/   
-void usage(int argc, char **argv)
+void usage()
 {
-    fprintf(stdout,"usage:\n"); 
-    fprintf(stdout,"%s [options] word\n",argv[0]);
-    fprintf(stdout,"options:\n");
-    fprintf(stdout,"        -s [r|a]\n");
+    fprintf(stdout,"Usage: dicthelp [OPTION]... word\n");
+    fprintf(stdout,"Suggests correctly spelled word(s) for a given "
+                   "(misspelled) word\n");
+    fprintf(stdout,"\n");
+    fprintf(stdout,"Options:\n");
+    fprintf(stdout,"        -s [r|a]\n");  
+    fprintf(stdout,"           Set sort order of the output\n");
+    fprintf(stdout,"           r sorts suggestions according to the "
+                               "relevancy\n");
+    fprintf(stdout,"           a sorts suggested words alphabetically\n");
+    fprintf(stdout,"           *Default sort order = r\n");
+    fprintf(stdout,"        -h Show this help\n");
+    fprintf(stdout,"Advanced Options:\n");
     fprintf(stdout,"        -t n\n");
-    fprintf(stdout,"-s : Set sort order of the output\n");
-    fprintf(stdout,"     r for sorting suggestions according to the relevancy\n");
-    fprintf(stdout,"     a for sorting suggested words alphabetically\n");
-    fprintf(stdout,"     Default sort order = r\n");
-    fprintf(stdout,"Advance Options:\n");
-    fprintf(stdout,"-t   : Set max edit-distance threshold\n");
-    fprintf(stdout,"       n is edit-distance (a numeric value)\n");
-    fprintf(stdout,"       Only suggestions with edit-distance <= n will be shown\n");
-    fprintf(stdout,"       Default threshold value is %d\n",DEFAULT_EDITDIST_THRESHOLD);
+    fprintf(stdout,"           Set max edit-distance threshold\n");
+    fprintf(stdout,"           n is edit-distance (a numeric value)\n");
+    fprintf(stdout,"           Only suggestions with edit-distance less "
+                               "than or equal to n will be shown\n");
+    fprintf(stdout,"           Higher the value of n, more suggestions"
+                               " (with reduced relevancy)\n");
+    fprintf(stdout,"           *Default threshold value is %d\n",
+                               DEFAULT_EDITDIST_THRESHOLD);
+    fprintf(stdout," EXAMPLES:\n");
+    fprintf(stdout," dicthelp happyness\n");
+    fprintf(stdout," dicthelp -t 3 happyness\n");
+    fprintf(stdout," dicthelp -t 3 -sa happyness\n");
+
 }
 
 
@@ -234,7 +248,7 @@ void get_programsettings(int argc, char **argv, PROGRAM_SETTINGS *psettings)
 {
   int opt;
 
-  while((opt = getopt(argc,argv,"vt:s:")) != -1)
+  while((opt = getopt(argc,argv,"?hvt:s:")) != -1)
   {
       switch(opt) {
           case 't':
@@ -245,7 +259,11 @@ void get_programsettings(int argc, char **argv, PROGRAM_SETTINGS *psettings)
                  (strcmp(optarg,"a")==0)) {
                   psettings->output_sort_order = optarg[0];
               }
-              break;
+              break;             
+          case '?':
+          case 'h':
+              psettings->help = TRUE;
+              break;              
       }
   }
 
@@ -253,17 +271,6 @@ void get_programsettings(int argc, char **argv, PROGRAM_SETTINGS *psettings)
 
 /* main 
 ****************/
-/*int main(int argc, char **argv)
-{
-   int edit_dist = UNKNOWN_EDIT_DISTANCE;
-
-   edit_dist = calc_edit_dist("hi","hi");
-
-  DBG_PRINTF("\n");
-}
-*/
-
-
 int main(int argc, char **argv)
 {
   FILE *fp = NULL;
@@ -278,10 +285,11 @@ int main(int argc, char **argv)
 
   PROGRAM_SETTINGS settings = 
   {
-      .verbose = FALSE,
+      .help               = FALSE,
+      .verbose            = FALSE,
       .editdist_threshold = DEFAULT_EDITDIST_THRESHOLD,
-      .output_sort_order = 'r',
-      .dict_file = DEFAULT_DICT_FILE
+      .output_sort_order  = 'r',
+      .dict_file          = DEFAULT_DICT_FILE
   };
 
   VECTOR_DICTWORD v_word = 
@@ -292,14 +300,14 @@ int main(int argc, char **argv)
    };
 
 
-
-  /* Arguments Check */
-  if(argc < 2) {
-       usage(argc, argv);
-       return (EXITCODE_FAIL_USAGE);
-  }  
-
+  /* Field command-line arguments */
   get_programsettings(argc,argv,&settings);
+
+  /* If 'help' requested or insufficient arguments provided */
+  if(settings.help || optind >= argc) {
+      usage();
+      return (EXITCODE_SUCCESS);
+  }
 
   /* Convert user word to lower case */
   strlwr_inplace(argv[optind]);
@@ -318,15 +326,22 @@ int main(int argc, char **argv)
   /* Read all dictionary words */
   while(fgets(readbuff,sizeof(readbuff),fp)) {
 
-      /* Ignore 'names' - words starting with uppercase letter */
-      if(isupper(readbuff[0])) 
-              continue;
-
       /* Remove the CR '\n' at the end of each word */
       dictwordlen = strlen(readbuff);
       if(readbuff[dictwordlen-1] == '\n') {
           readbuff[--dictwordlen] = '\0'; 
       }
+
+
+      /* Ignore following 
+         - 'names' (words starting with uppercase letter)
+         - One letter long words 
+      */
+      if(isupper(readbuff[0]) ||
+         strlen(readbuff) <= 1) {
+              continue;
+      }
+
 
       /* Add each word to the vector */
       exitcode = addwordtovect(&v_word, readbuff);
@@ -401,6 +416,7 @@ int main(int argc, char **argv)
   /* Return the memory */
   gnrcheap_destroy(pheap,NULL); 
   freewordvect(&v_word);
-  return (exitcode);
 
+
+  return (exitcode);
 }    

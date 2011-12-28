@@ -83,10 +83,12 @@ VOID gnrcheap_destroy(PGNRCHEAP pheap,
 	//NOTES: 
 	// => Heap operates from offset 1
 	// => 'deep delete' need be done only for 'occupied' elements 
-	for(i=1;i<pheap->occupancy;i++)
-    {
-		(*pfnheapeledel)(pheap->heaparr[i]);
-	}
+    if(pfnheapeledel) {
+        for(i=1;i<pheap->occupancy;i++)
+        {
+            (*pfnheapeledel)(pheap->heaparr[i]);
+        }
+    }
 
 	free(pheap->heaparr);
 	free(pheap);
