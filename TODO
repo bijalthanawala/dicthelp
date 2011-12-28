@@ -1,7 +1,9 @@
 TODO
+* Read the word from stdin if not supplied on the commandline
+* Expand this one to read and spell-check an entire text document
+* Support looking up into more than one dictionary
 * Make separate Makefile target - debug
 * Make separate Makefile target - unittest
-* Commnad line: Support dictionary name
 * ONGOING - Meaningful comments
 * Make output less geeky
 
@@ -13,3 +15,4 @@ DONE
          suggestions only if requested (via command line option)
 * DONE - Write 'Usage' for newly supported command line options
 * DONE - Add all dictionary words in the min-heap (key = edit distance)
+* DONE - Command line: Support dictionary name

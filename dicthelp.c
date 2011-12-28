@@ -22,7 +22,7 @@
 #define UNKNOWN_EDIT_DISTANCE (-1)
 
 // Default settings
-#define DEFAULT_DICT_FILE "/usr/share/dict/american-english"
+#define DEFAULT_DICT_FILE "/usr/share/dict/words"
 #define DEFAULT_EDITDIST_THRESHOLD 2
 
 
@@ -71,11 +71,15 @@ void usage()
                    "words(s) for a given (misspelled) word.\n");
     fprintf(stdout,"\n");
     fprintf(stdout,"Options:\n");
+    fprintf(stdout,"        -d <dictionary>\n");  
+    fprintf(stdout,"           Specify name of the dictionary to look up the\n");
+    fprintf(stdout,"           word/suggestions into\n");
+    fprintf(stdout,"           *Default dictionary = %s\n",DEFAULT_DICT_FILE);
     fprintf(stdout,"        -s [r|a]\n");  
     fprintf(stdout,"           Set sort order of the output\n");
-    fprintf(stdout,"           r sorts suggestions according to the "
-                               "relevancy\n");
-    fprintf(stdout,"           a sorts suggested words alphabetically\n");
+    fprintf(stdout,"           r  sorts suggested words accordig to the "
+                               "relevancy (edit-distance)\n");
+    fprintf(stdout,"           a  sorts suggested words alphabetically\n");
     fprintf(stdout,"           *Default sort order = r\n");
     fprintf(stdout,"        -f Force suggestions.\n");
     fprintf(stdout,"           Show suggestions (similarly spelled words) "
@@ -255,9 +259,12 @@ void get_programsettings(int argc, char **argv, PROGRAM_SETTINGS *psettings)
 {
   int opt;
 
-  while((opt = getopt(argc,argv,"?hvt:s:f")) != -1)
+  while((opt = getopt(argc,argv,"?hvt:s:d:f")) != -1)
   {
       switch(opt) {
+          case 'd':
+              psettings->dict_file = optarg;
+              break;
           case 't':
               psettings->editdist_threshold = atoi(optarg);
               break;

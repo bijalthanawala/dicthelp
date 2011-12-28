@@ -8,10 +8,14 @@ Language: C
 Usage: dicthelp [OPTION]... word
 
 Options:
+        -d <dictionary>
+           Specify name of the dictionary to look up the
+           word/suggestions into
+           *Default dictionary = /usr/share/dict/words
         -s [r|a]
-           Set sort order of the output
-           r sorts suggestions according to the relevancy
-           a sorts suggested words alphabetically
+           Set sort-order of the output
+           r  sorts suggested words accordig to the relevancy (edit-distance)
+           a  sorts suggested words alphabetically
            *Default sort order = r
         -f Force suggestions.
            Show suggestions (similarly spelled words) even if the supplied word is
