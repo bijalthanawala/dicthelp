@@ -63,7 +63,20 @@ typedef struct {
 ****************/   
 void usage(int argc, char **argv)
 {
-    fprintf(stdout,"usage: %s word\n",argv[0]);
+    fprintf(stdout,"usage:\n"); 
+    fprintf(stdout,"%s [options] word\n",argv[0]);
+    fprintf(stdout,"options:\n");
+    fprintf(stdout,"        -s [r|a]\n");
+    fprintf(stdout,"        -t n\n");
+    fprintf(stdout,"-s : Set sort order of the output\n");
+    fprintf(stdout,"     r for sorting suggestions according to the relevancy\n");
+    fprintf(stdout,"     a for sorting suggested words alphabetically\n");
+    fprintf(stdout,"     Default sort order = r\n");
+    fprintf(stdout,"Advance Options:\n");
+    fprintf(stdout,"-t   : Set max edit-distance threshold\n");
+    fprintf(stdout,"       n is edit-distance (a numeric value)\n");
+    fprintf(stdout,"       Only suggestions with edit-distance <= n will be shown\n");
+    fprintf(stdout,"       Default threshold value is %d\n",DEFAULT_EDITDIST_THRESHOLD);
 }
 
 
@@ -362,7 +375,7 @@ int main(int argc, char **argv)
   if(settings.output_sort_order == 'a') {
       for(i=0; i < v_word.curr_size; i++) {
           if(v_word.pwordarray[i].edit_dist <= settings.editdist_threshold) {
-              fprintf(stdout,"%s\t=>\t%s\t%d\n", argv[optind], 
+              fprintf(stdout,"%s\t=>\t%s\tedit-dist=%d\n", argv[optind], 
                       v_word.pwordarray[i].dict_word,
                       v_word.pwordarray[i].edit_dist);
           }
@@ -376,7 +389,7 @@ int main(int argc, char **argv)
       while(pworddist = gnrcheap_getmin(pheap))
       {
           if(pworddist->edit_dist <= settings.editdist_threshold) {
-              fprintf(stdout,"%s\t=>\t%s\t%d\n", argv[optind], 
+              fprintf(stdout,"%s\t=>\t%s\tedit-dist=%d\n", argv[optind], 
                       pworddist->dict_word,
                       pworddist->edit_dist);
           }

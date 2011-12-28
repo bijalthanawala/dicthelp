@@ -8,5 +8,6 @@
 * ONGOING - Meaningful comments
 * If exact match is found (edit distance = 0) then show other
   close words only if requested (via command line option)
-* Write 'Usage' for newly supported command line options
+* DONE - Write 'Usage' for newly supported command line options
+* Make output less geeky
 
