@@ -399,6 +399,7 @@ int main(int argc, char **argv)
 
 
   /* Return the memory */
+  gnrcheap_destroy(pheap,NULL); 
   freewordvect(&v_word);
   return (exitcode);
 
