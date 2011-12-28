@@ -41,22 +41,23 @@
 ***************/
 
 typedef struct dictword_editdist {
-    int edit_dist;
-    char *dict_word;
+    int    edit_dist;
+    char  *dict_word;
 } EDITDIST, *P_EDITDIST;
  
 typedef struct {
     P_EDITDIST pwordarray;
-    int max_word;
-    int curr_size;   //Number of words currently held
+    int        max_word;
+    int        curr_size;   //Number of words currently held
 } VECTOR_DICTWORD, *P_VECTOR_DICTWORD;    
 
 typedef struct {
-    BOOL help;
-    BOOL verbose;
-    int editdist_threshold; 
+    BOOL   help;
+    BOOL   verbose;
+    int    editdist_threshold; 
     char  *dict_file;
-    char output_sort_order;
+    char   output_sort_order;
+    BOOL   stop_on_match;
 } PROGRAM_SETTINGS;
 
 
@@ -64,9 +65,10 @@ typedef struct {
 ****************/   
 void usage()
 {
+    fprintf(stdout,"\n");
     fprintf(stdout,"Usage: dicthelp [OPTION]... word\n");
-    fprintf(stdout,"Suggests correctly spelled word(s) for a given "
-                   "(misspelled) word\n");
+    fprintf(stdout,"Refers the dictionary and suggests correctly spelled "
+                   "words(s) for a given (misspelled) word.\n");
     fprintf(stdout,"\n");
     fprintf(stdout,"Options:\n");
     fprintf(stdout,"        -s [r|a]\n");  
@@ -75,6 +77,11 @@ void usage()
                                "relevancy\n");
     fprintf(stdout,"           a sorts suggested words alphabetically\n");
     fprintf(stdout,"           *Default sort order = r\n");
+    fprintf(stdout,"        -f Force suggestions.\n");
+    fprintf(stdout,"           Show suggestions (similarly spelled words) "
+                               "even if the supplied word is\n");
+    fprintf(stdout,"           spelled correctly.\n");
+    fprintf(stdout,"           *By default -f is not in effect.\n");
     fprintf(stdout,"        -h Show this help\n");
     fprintf(stdout,"Advanced Options:\n");
     fprintf(stdout,"        -t n\n");
@@ -248,7 +255,7 @@ void get_programsettings(int argc, char **argv, PROGRAM_SETTINGS *psettings)
 {
   int opt;
 
-  while((opt = getopt(argc,argv,"?hvt:s:")) != -1)
+  while((opt = getopt(argc,argv,"?hvt:s:f")) != -1)
   {
       switch(opt) {
           case 't':
@@ -260,6 +267,9 @@ void get_programsettings(int argc, char **argv, PROGRAM_SETTINGS *psettings)
                   psettings->output_sort_order = optarg[0];
               }
               break;             
+          case 'f':
+              psettings->stop_on_match = FALSE;
+              break;              
           case '?':
           case 'h':
               psettings->help = TRUE;
@@ -278,6 +288,7 @@ int main(int argc, char **argv)
   int dictwordlen=0;
   signed int i=0;
   int exitcode = EXITCODE_SUCCESS; 
+  BOOL match_found = FALSE;
 
   P_EDITDIST pworddist = NULL;
 
@@ -289,7 +300,8 @@ int main(int argc, char **argv)
       .verbose            = FALSE,
       .editdist_threshold = DEFAULT_EDITDIST_THRESHOLD,
       .output_sort_order  = 'r',
-      .dict_file          = DEFAULT_DICT_FILE
+      .dict_file          = DEFAULT_DICT_FILE,
+      .stop_on_match      = TRUE
   };
 
   VECTOR_DICTWORD v_word = 
@@ -382,36 +394,58 @@ int main(int argc, char **argv)
       v_word.pwordarray[i].edit_dist = calc_edit_dist(
               argv[optind], 
               v_word.pwordarray[i].dict_word);
-      gnrcheap_insert(pheap,&v_word.pwordarray[i]); 
-  }
 
-  /* Show dictionary words and edit distances to the user word 
-     in alphabetical order, if that is requested */
-  if(settings.output_sort_order == 'a') {
-      for(i=0; i < v_word.curr_size; i++) {
-          if(v_word.pwordarray[i].edit_dist <= settings.editdist_threshold) {
-              fprintf(stdout,"%s\t=>\t%s\tedit-dist=%d\n", argv[optind], 
-                      v_word.pwordarray[i].dict_word,
-                      v_word.pwordarray[i].edit_dist);
-          }
+      if(v_word.pwordarray[i].edit_dist == 0) {
+        //Edit distance is ZERO, means an exact match was found in
+        //the dictionary, means the user supplied word is spelled 
+        //correctly          
+        match_found = TRUE;  
+        fprintf(stdout,"You word '%s' was found in the dictionary, "
+                       "which means it is spelled correctly.\n",
+                       argv[optind]);
+        if(settings.stop_on_match) {
+            fprintf(stdout,"If you want to see similarly spelled words, "
+                           "rerun this program with argument -f\n");
+        }
+        else {
+            fprintf(stdout,"Below is the list of similarlty spelled words\n");
+        }   
+      }
+      else {
+        gnrcheap_insert(pheap,&v_word.pwordarray[i]); 
       }
   }
 
-
-  /* Show dictionary words and edit distances to the user word 
-     in relevancy order (edit distance), if that is requested */
-   if(settings.output_sort_order == 'r') {
-      while(pworddist = gnrcheap_getmin(pheap))
-      {
-          if(pworddist->edit_dist <= settings.editdist_threshold) {
-              fprintf(stdout,"%s\t=>\t%s\tedit-dist=%d\n", argv[optind], 
-                      pworddist->dict_word,
-                      pworddist->edit_dist);
+  if((match_found == FALSE) ||
+     (match_found == TRUE && settings.stop_on_match == FALSE)) {     
+      /* Show dictionary words and edit distances to the user word 
+         in alphabetical order, if that is requested */
+      if(settings.output_sort_order == 'a') {
+          for(i=0; i < v_word.curr_size; i++) {
+              if(v_word.pwordarray[i].edit_dist && 
+                 v_word.pwordarray[i].edit_dist <= settings.editdist_threshold) {
+                  fprintf(stdout,"%s\t=>\t%s\tedit-dist=%d\n", argv[optind], 
+                          v_word.pwordarray[i].dict_word,
+                          v_word.pwordarray[i].edit_dist);
+              }
           }
-          gnrcheap_delmin(pheap,NULL);
+      }
+
+
+      /* Show dictionary words and edit distances to the user word 
+         in relevancy order (edit distance), if that is requested */
+      if(settings.output_sort_order == 'r') {
+          while(pworddist = gnrcheap_getmin(pheap))
+          {
+              if(pworddist->edit_dist <= settings.editdist_threshold) {
+                  fprintf(stdout,"%s\t=>\t%s\tedit-dist=%d\n", argv[optind], 
+                          pworddist->dict_word,
+                          pworddist->edit_dist);
+              }
+              gnrcheap_delmin(pheap,NULL);
+          }
       }
   }
-
 
   /* Return the memory */
   gnrcheap_destroy(pheap,NULL); 
