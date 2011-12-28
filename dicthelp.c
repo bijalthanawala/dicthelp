@@ -66,10 +66,12 @@ typedef struct {
 void usage()
 {
     fprintf(stdout,"\n");
-    fprintf(stdout,"Usage: dicthelp [OPTION]... word\n");
+    fprintf(stdout,"Usage: dicthelp [OPTION]... [word]\n");
     fprintf(stdout,"Refers the dictionary and suggests correctly spelled "
                    "words(s) for a given (misspelled) word.\n");
     fprintf(stdout,"\n");
+    fprintf(stdout,"If the word is not supplied on the command-line, it is "
+                   "read through stdin\n");
     fprintf(stdout,"Options:\n");
     fprintf(stdout,"        -d <dictionary>\n");  
     fprintf(stdout,"           Specify name of the dictionary to look up the\n");
@@ -77,7 +79,7 @@ void usage()
     fprintf(stdout,"           *Default dictionary = %s\n",DEFAULT_DICT_FILE);
     fprintf(stdout,"        -s [r|a]\n");  
     fprintf(stdout,"           Set sort order of the output\n");
-    fprintf(stdout,"           r  sorts suggested words accordig to the "
+    fprintf(stdout,"           r  sorts suggested words according to the "
                                "relevancy (edit-distance)\n");
     fprintf(stdout,"           a  sorts suggested words alphabetically\n");
     fprintf(stdout,"           *Default sort order = r\n");
@@ -292,13 +294,13 @@ int main(int argc, char **argv)
 {
   FILE *fp = NULL;
   char readbuff[MAX_DICTWORD_LEN+1];
+  char userword[MAX_DICTWORD_LEN+1];
   int dictwordlen=0;
   signed int i=0;
   int exitcode = EXITCODE_SUCCESS; 
   BOOL match_found = FALSE;
 
   P_EDITDIST pworddist = NULL;
-
   PGNRCHEAP pheap = NULL;
 
   PROGRAM_SETTINGS settings = 
@@ -322,14 +324,32 @@ int main(int argc, char **argv)
   /* Field command-line arguments */
   get_programsettings(argc,argv,&settings);
 
-  /* If 'help' requested or insufficient arguments provided */
-  if(settings.help || optind >= argc) {
+  /* If 'help' is requested or incorrect arguments passed ... */
+  if(settings.help) {
       usage();
       return (EXITCODE_SUCCESS);
   }
 
+  /* Get hold of the word user is interested in */
+  if(optind < argc) {
+      //User has supplied the word on command-line
+      strncpy(userword,argv[optind],sizeof(userword)-1);
+      userword[sizeof(userword)-1] = '\0'; //Handle with grace, if 
+                                           //user-supplied word is too long
+  }
+  else {
+      //User has not supplied the word on command-line, read thru stdin
+      fgets(userword,sizeof(userword),stdin);       
+      i = strlen(userword);
+      if(userword[i-1] == '\n') {
+          userword[i-1] = '\0'; 
+      }
+ 
+  }
+
+
   /* Convert user word to lower case */
-  strlwr_inplace(argv[optind]);
+  strlwr_inplace(userword);
 
 
   /* Open the dictionary file */
@@ -399,7 +419,7 @@ int main(int argc, char **argv)
   for(i=0; i < v_word.curr_size; i++)
   {
       v_word.pwordarray[i].edit_dist = calc_edit_dist(
-              argv[optind], 
+              userword, 
               v_word.pwordarray[i].dict_word);
 
       if(v_word.pwordarray[i].edit_dist == 0) {
@@ -407,9 +427,9 @@ int main(int argc, char **argv)
         //the dictionary, means the user supplied word is spelled 
         //correctly          
         match_found = TRUE;  
-        fprintf(stdout,"You word '%s' was found in the dictionary, "
+        fprintf(stdout,"Your word '%s' was found in the dictionary, "
                        "which means it is spelled correctly.\n",
-                       argv[optind]);
+                       userword);
         if(settings.stop_on_match) {
             fprintf(stdout,"If you want to see similarly spelled words, "
                            "rerun this program with argument -f\n");
@@ -431,7 +451,8 @@ int main(int argc, char **argv)
           for(i=0; i < v_word.curr_size; i++) {
               if(v_word.pwordarray[i].edit_dist && 
                  v_word.pwordarray[i].edit_dist <= settings.editdist_threshold) {
-                  fprintf(stdout,"%s\t=>\t%s\tedit-dist=%d\n", argv[optind], 
+                  fprintf(stdout,"%s\t=>\t%s\tedit-dist=%d\n", 
+                          userword, 
                           v_word.pwordarray[i].dict_word,
                           v_word.pwordarray[i].edit_dist);
               }
@@ -445,7 +466,8 @@ int main(int argc, char **argv)
           while(pworddist = gnrcheap_getmin(pheap))
           {
               if(pworddist->edit_dist <= settings.editdist_threshold) {
-                  fprintf(stdout,"%s\t=>\t%s\tedit-dist=%d\n", argv[optind], 
+                  fprintf(stdout,"%s\t=>\t%s\tedit-dist=%d\n", 
+                          userword, 
                           pworddist->dict_word,
                           pworddist->edit_dist);
               }
@@ -461,3 +483,4 @@ int main(int argc, char **argv)
 
   return (exitcode);
 }    
+

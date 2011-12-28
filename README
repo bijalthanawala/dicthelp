@@ -1,20 +1,22 @@
 Project: dicthelp
-Intention: Refer the dictionary and suggest correct word(s) for 
+Intention: Refer the dictionary and suggests correct word(s) for 
            a given misspelled word
 Start Date: 16th Dec 2011
 Language: C
 
 
-Usage: dicthelp [OPTION]... word
+Usage: dicthelp [OPTION]... [word]
+Refers the dictionary and suggests correctly spelled words(s) for a given (misspelled) word.
 
+If the word is not supplied on the command-line, it is read through stdin
 Options:
         -d <dictionary>
            Specify name of the dictionary to look up the
            word/suggestions into
            *Default dictionary = /usr/share/dict/words
         -s [r|a]
-           Set sort-order of the output
-           r  sorts suggested words accordig to the relevancy (edit-distance)
+           Set sort order of the output
+           r  sorts suggested words according to the relevancy (edit-distance)
            a  sorts suggested words alphabetically
            *Default sort order = r
         -f Force suggestions.
@@ -33,3 +35,4 @@ Advanced Options:
  dicthelp happyness
  dicthelp -t 3 happyness
  dicthelp -t 3 -sa happyness
+
