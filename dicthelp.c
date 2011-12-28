@@ -5,6 +5,9 @@
 #include <errno.h>
 #include <string.h>
 #include <stdlib.h>
+#include <unistd.h>
+
+#include "gnrcheap.h"
 
 /* constants
 ***************/
@@ -20,7 +23,7 @@
 
 // Default settings
 #define DEFAULT_DICT_FILE "/usr/share/dict/american-english"
-#define DEFAULT_MAX_THRESHOLD 2
+#define DEFAULT_EDITDIST_THRESHOLD 2
 
 
 /* macros
@@ -48,7 +51,12 @@ typedef struct {
     int curr_size;   //Number of words currently held
 } VECTOR_DICTWORD, *P_VECTOR_DICTWORD;    
 
-
+typedef struct {
+    BOOL verbose;
+    int editdist_threshold; 
+    char  *dict_file;
+    char output_sort_order;
+} PROGRAM_SETTINGS;
 
 
 /* routines
@@ -57,6 +65,8 @@ void usage(int argc, char **argv)
 {
     fprintf(stdout,"usage: %s word\n",argv[0]);
 }
+
+
 
 void freewordvect(P_VECTOR_DICTWORD pv_word)
 {
@@ -75,6 +85,8 @@ void freewordvect(P_VECTOR_DICTWORD pv_word)
         free(pv_word->pwordarray);
     }
 }
+
+
 
 int addwordtovect(P_VECTOR_DICTWORD pv_word,
                    char *word)
@@ -108,6 +120,8 @@ int addwordtovect(P_VECTOR_DICTWORD pv_word,
 
   return (EXITCODE_SUCCESS);
 }    
+
+
 
 int calc_edit_dist(char *string1, char *string2)
 {
@@ -178,6 +192,8 @@ int calc_edit_dist(char *string1, char *string2)
     return edit_dist;
 }
 
+
+
 void strlwr_inplace(char *str)
 {
   char *cp = str;
@@ -191,6 +207,36 @@ void strlwr_inplace(char *str)
   }
 }
 
+
+
+int cmp_heap_elements(PVOID pele1, PVOID pele2)
+{
+  P_EDITDIST pdist1 = (P_EDITDIST) pele1;
+  P_EDITDIST pdist2 = (P_EDITDIST) pele2;
+
+  return (pdist1->edit_dist - pdist2->edit_dist);
+}
+
+void get_programsettings(int argc, char **argv, PROGRAM_SETTINGS *psettings)
+{
+  int opt;
+
+  while((opt = getopt(argc,argv,"vt:s:")) != -1)
+  {
+      switch(opt) {
+          case 't':
+              psettings->editdist_threshold = atoi(optarg);
+              break;
+          case 's':
+              if((strcmp(optarg,"r")==0) ||
+                 (strcmp(optarg,"a")==0)) {
+                  psettings->output_sort_order = optarg[0];
+              }
+              break;
+      }
+  }
+
+}
 
 /* main 
 ****************/
@@ -207,15 +253,23 @@ void strlwr_inplace(char *str)
 
 int main(int argc, char **argv)
 {
-  char *dict_file = DEFAULT_DICT_FILE;
   FILE *fp = NULL;
   char readbuff[MAX_DICTWORD_LEN+1];
   int dictwordlen=0;
   signed int i=0;
   int exitcode = EXITCODE_SUCCESS; 
 
-  int max_threshold = DEFAULT_MAX_THRESHOLD;
+  P_EDITDIST pworddist = NULL;
 
+  PGNRCHEAP pheap = NULL;
+
+  PROGRAM_SETTINGS settings = 
+  {
+      .verbose = FALSE,
+      .editdist_threshold = DEFAULT_EDITDIST_THRESHOLD,
+      .output_sort_order = 'r',
+      .dict_file = DEFAULT_DICT_FILE
+  };
 
   VECTOR_DICTWORD v_word = 
    {  
@@ -232,18 +286,23 @@ int main(int argc, char **argv)
        return (EXITCODE_FAIL_USAGE);
   }  
 
+  get_programsettings(argc,argv,&settings);
+
   /* Convert user word to lower case */
-  strlwr_inplace(argv[1]);
+  strlwr_inplace(argv[optind]);
 
 
-  /* Open the dictionary file and read all words */
-  fp = fopen(dict_file,"r");
+  /* Open the dictionary file */
+  fp = fopen(settings.dict_file,"r");
   if(!fp) {
-    fprintf(stderr, "Failure opening file %s. Error: %s\n",dict_file,strerror(errno));
+    fprintf(stderr, "Failure opening file %s. Error: %s\n",
+                    settings.dict_file,
+                    strerror(errno));
     return (EXITCODE_FAIL_FILE);
   } 
 
 
+  /* Read all dictionary words */
   while(fgets(readbuff,sizeof(readbuff),fp)) {
 
       /* Ignore 'names' - words starting with uppercase letter */
@@ -262,6 +321,10 @@ int main(int argc, char **argv)
           break;
   }
 
+  /* Close the dictionary file */
+  fclose(fp);
+
+  /* Check if any error occured in the while() loop*/
   if(exitcode != EXITCODE_SUCCESS) 
   {
       freewordvect(&v_word);
@@ -275,22 +338,52 @@ int main(int argc, char **argv)
   v_word.pwordarray = realloc(v_word.pwordarray,
           v_word.curr_size * sizeof(EDITDIST));
 
+   /* Create the heap */
+  pheap = gnrcheap_create(HEAP_TYPE_MIN,
+                          v_word.curr_size,
+                          cmp_heap_elements); 
+  if(! pheap) {
+     freewordvect(&v_word);
+     return EXITCODE_FAIL_MEM;
+  } 
+ 
+
   /* Calculate edit distance for each dictionary words v/s user word */
   for(i=0; i < v_word.curr_size; i++)
   {
       v_word.pwordarray[i].edit_dist = calc_edit_dist(
-              argv[1], 
+              argv[optind], 
               v_word.pwordarray[i].dict_word);
+      gnrcheap_insert(pheap,&v_word.pwordarray[i]); 
   }
 
-  /* Show dictionary words and edit distances to the user word */
-  for(i=0; i < v_word.curr_size; i++) {
-      if(v_word.pwordarray[i].edit_dist <= max_threshold) {
-          fprintf(stdout,"%s\t=>\t%s\t%d\n", argv[1], 
-                  v_word.pwordarray[i].dict_word,
-                  v_word.pwordarray[i].edit_dist);
+  /* Show dictionary words and edit distances to the user word 
+     in alphabetical order, if that is requested */
+  if(settings.output_sort_order == 'a') {
+      for(i=0; i < v_word.curr_size; i++) {
+          if(v_word.pwordarray[i].edit_dist <= settings.editdist_threshold) {
+              fprintf(stdout,"%s\t=>\t%s\t%d\n", argv[optind], 
+                      v_word.pwordarray[i].dict_word,
+                      v_word.pwordarray[i].edit_dist);
+          }
       }
   }
+
+
+  /* Show dictionary words and edit distances to the user word 
+     in relevancy order (edit distance), if that is requested */
+   if(settings.output_sort_order == 'r') {
+      while(pworddist = gnrcheap_getmin(pheap))
+      {
+          if(pworddist->edit_dist <= settings.editdist_threshold) {
+              fprintf(stdout,"%s\t=>\t%s\t%d\n", argv[optind], 
+                      pworddist->dict_word,
+                      pworddist->edit_dist);
+          }
+          gnrcheap_delmin(pheap,NULL);
+      }
+  }
+
 
   /* Return the memory */
   freewordvect(&v_word);

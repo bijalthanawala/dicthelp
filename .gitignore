@@ -2,3 +2,4 @@ python_example
 core
 *.swp
 dicthelp
+*.o

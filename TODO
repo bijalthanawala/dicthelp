@@ -1,8 +1,12 @@
-* Create Makefile
+* DONE - Create Makefile
 * Make separate Makefile target - debug
 * Make separate Makefile target - unittest
-* Add all dictionary words in the min-heap (key = edit distance)
-* Show all dictionary words with edit distance <= THRESHOLD_EDIT_DISTANCE
-* Command line: Support THRESHOLD_EDIT_DISTANCE 
+* DONE - Add all dictionary words in the min-heap (key = edit distance)
+* DONE - Show all dictionary words with edit distance <= THRESHOLD_EDIT_DISTANCE
+* DONE - Command line: Support THRESHOLD_EDIT_DISTANCE 
 * Commnad line: Support dictionary name
-* Meaningful comments
+* ONGOING - Meaningful comments
+* If exact match is found (edit distance = 0) then show other
+  close words only if requested (via command line option)
+* Write 'Usage' for newly supported command line options
+
