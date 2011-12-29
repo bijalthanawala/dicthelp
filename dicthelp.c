@@ -67,17 +67,18 @@ void usage()
 {
     fprintf(stdout,"\n");
     fprintf(stdout,"Usage: dicthelp [OPTION]... [word]\n");
+    fprintf(stdout,"\n");
     fprintf(stdout,"Refers the dictionary and suggests correctly spelled "
                    "words(s) for a given (misspelled) word.\n");
-    fprintf(stdout,"\n");
     fprintf(stdout,"If the word is not supplied on the command-line, it is "
                    "read through stdin\n");
+    fprintf(stdout,"\n");
     fprintf(stdout,"Options:\n");
     fprintf(stdout,"        -d <dictionary>\n");  
     fprintf(stdout,"           Specify name of the dictionary to look up the\n");
     fprintf(stdout,"           word/suggestions into\n");
     fprintf(stdout,"           *Default dictionary = %s\n",DEFAULT_DICT_FILE);
-    fprintf(stdout,"        -s [r|a]\n");  
+    fprintf(stdout,"        -s <r|a>\n");  
     fprintf(stdout,"           Set sort order of the output\n");
     fprintf(stdout,"           r  sorts suggested words according to the "
                                "relevancy (edit-distance)\n");
@@ -88,21 +89,23 @@ void usage()
                                "even if the supplied word is\n");
     fprintf(stdout,"           spelled correctly.\n");
     fprintf(stdout,"           *By default -f is not in effect.\n");
+    fprintf(stdout,"        -v Enable verbose output\n");
     fprintf(stdout,"        -h Show this help\n");
     fprintf(stdout,"Advanced Options:\n");
-    fprintf(stdout,"        -t n\n");
-    fprintf(stdout,"           Set max edit-distance threshold\n");
-    fprintf(stdout,"           n is edit-distance (a numeric value)\n");
+    fprintf(stdout,"        -e n\n");
+    fprintf(stdout,"           Set max edit-distance threshold.\n");
+    fprintf(stdout,"           n is edit-distance (a numeric value).\n");
     fprintf(stdout,"           Only suggestions with edit-distance less "
                                "than or equal to n will be shown\n");
-    fprintf(stdout,"           Higher the value of n, more suggestions"
-                               " (with reduced relevancy)\n");
-    fprintf(stdout,"           *Default threshold value is %d\n",
+    fprintf(stdout,"           Higher the value of n, more the suggestions"
+                               " (with reducing relevancy)\n");
+    fprintf(stdout,"           *Default edit-distance threshold =  %d\n",
                                DEFAULT_EDITDIST_THRESHOLD);
-    fprintf(stdout," EXAMPLES:\n");
+    fprintf(stdout," SOME EXAMPLES:\n");
     fprintf(stdout," dicthelp happyness\n");
-    fprintf(stdout," dicthelp -t 3 happyness\n");
-    fprintf(stdout," dicthelp -t 3 -sa happyness\n");
+    fprintf(stdout," dicthelp -e3 happyness\n");
+    fprintf(stdout," dicthelp -e3 -sa happyness\n");
+    fprintf(stdout," dicthelp -e1 -f happy\n");
 
 }
 
@@ -176,8 +179,8 @@ int calc_edit_dist(char *string1, char *string2)
 
     int edit_dist = UNKNOWN_EDIT_DISTANCE;
 
-   DBG_PRINTF("calc_edit_dist: Comparing %s with %s\n",string1, string2);
-    
+    DBG_PRINTF("calc_edit_dist: Comparing %s with %s\n",string1, string2);
+
     prev_row = malloc(strlen2 + 1);
     if(!prev_row) {
         return UNKNOWN_EDIT_DISTANCE;
@@ -193,19 +196,19 @@ int calc_edit_dist(char *string1, char *string2)
     for(j=0; j <= strlen2 ; j++)
         prev_row[j] = j;
 
-   DBG_PRINTF(" \t  \t");
+    DBG_PRINTF(" \t  \t");
     for(j=0;j<strlen2;j++)
-      DBG_PRINTF("%c\t",string2[j]); 
-     
-   DBG_PRINTF("\n");
-   DBG_PRINTF(" \t");
+        DBG_PRINTF("%c\t",string2[j]); 
+
+    DBG_PRINTF("\n");
+    DBG_PRINTF(" \t");
     for(j=0;j<=strlen2;j++)
-      DBG_PRINTF("%02d\t",prev_row[j]); 
-  
+        DBG_PRINTF("%02d\t",prev_row[j]); 
+
     for(i = 0; i < strlen1; i ++) {
         curr_row[0] = i+1;
-       DBG_PRINTF("\n");
-       DBG_PRINTF("%c\t%02d\t",string1[i],curr_row[0]);
+        DBG_PRINTF("\n");
+        DBG_PRINTF("%c\t%02d\t",string1[i],curr_row[0]);
         for(j = 0; j < strlen2; j++) {
             if(string1[i] == string2[j]) {
                 curr_row[j+1] = prev_row[j];
@@ -214,8 +217,8 @@ int calc_edit_dist(char *string1, char *string2)
                 curr_row[j+1] = min(min(prev_row[j],prev_row[j+1]),curr_row[j]);
                 curr_row[j+1]++;
             }
-           DBG_PRINTF("%02d\t",curr_row[j+1]);
-           }
+            DBG_PRINTF("%02d\t",curr_row[j+1]);
+        }
         tmp = prev_row;
         prev_row = curr_row;
         curr_row = tmp;
@@ -226,8 +229,8 @@ int calc_edit_dist(char *string1, char *string2)
     free(prev_row);
     free(curr_row);
 
-   DBG_PRINTF("\n");
-   DBG_PRINTF("\n");
+    DBG_PRINTF("\n");
+    DBG_PRINTF("\n");
 
     return edit_dist;
 }
@@ -253,32 +256,42 @@ int cmp_heap_elements(PVOID pele1, PVOID pele2)
 {
   P_EDITDIST pdist1 = (P_EDITDIST) pele1;
   P_EDITDIST pdist2 = (P_EDITDIST) pele2;
+  int retval = 0;
 
-  return (pdist1->edit_dist - pdist2->edit_dist);
+  if(pdist1->edit_dist != pdist2->edit_dist) {
+      retval = (pdist1->edit_dist - pdist2->edit_dist);
+  } else {
+    retval = strcmp(pdist1->dict_word,pdist2->dict_word);
+  }
+
+  return retval; 
 }
 
 void get_programsettings(int argc, char **argv, PROGRAM_SETTINGS *psettings)
 {
   int opt;
 
-  while((opt = getopt(argc,argv,"?hvt:s:d:f")) != -1)
+  while((opt = getopt(argc,argv,"?hvfe:s:d:")) != -1)
   {
       switch(opt) {
           case 'd':
               psettings->dict_file = optarg;
               break;
-          case 't':
+          case 'e':
               psettings->editdist_threshold = atoi(optarg);
               break;
           case 's':
               if((strcmp(optarg,"r")==0) ||
-                 (strcmp(optarg,"a")==0)) {
+                      (strcmp(optarg,"a")==0)) {
                   psettings->output_sort_order = optarg[0];
               }
               break;             
           case 'f':
               psettings->stop_on_match = FALSE;
               break;              
+          case 'v':
+              psettings->verbose = TRUE;
+              break;    
           case '?':
           case 'h':
               psettings->help = TRUE;
@@ -427,15 +440,15 @@ int main(int argc, char **argv)
         //the dictionary, means the user supplied word is spelled 
         //correctly          
         match_found = TRUE;  
-        fprintf(stdout,"Your word '%s' was found in the dictionary, "
+        fprintf(stdout,"Word '%s' was found in the dictionary, "
                        "which means it is spelled correctly.\n",
                        userword);
         if(settings.stop_on_match) {
-            fprintf(stdout,"If you want to see similarly spelled words, "
-                           "rerun this program with argument -f\n");
+            fprintf(stdout,"To see similarly spelled words, rerun this "
+                           "program with argument -f\n");
         }
         else {
-            fprintf(stdout,"Below is the list of similarlty spelled words\n");
+            fprintf(stdout,"Below is the list of similarly spelled words:\n");
         }   
       }
       else {
@@ -451,13 +464,18 @@ int main(int argc, char **argv)
           for(i=0; i < v_word.curr_size; i++) {
               if(v_word.pwordarray[i].edit_dist && 
                  v_word.pwordarray[i].edit_dist <= settings.editdist_threshold) {
-                  fprintf(stdout,"%s\t=>\t%s\tedit-dist=%d\n", 
-                          userword, 
-                          v_word.pwordarray[i].dict_word,
-                          v_word.pwordarray[i].edit_dist);
+                  if(!settings.verbose) {
+                      fprintf(stdout,"%s\n",v_word.pwordarray[i].dict_word);
+                  }
+                  else {
+                      fprintf(stdout,"%s\t=>\t%-15s\tedit-dist=%d\n", 
+                              userword, 
+                              v_word.pwordarray[i].dict_word,
+                              v_word.pwordarray[i].edit_dist);
+                  }
               }
           }
-      }
+      } 
 
 
       /* Show dictionary words and edit distances to the user word 
@@ -466,12 +484,20 @@ int main(int argc, char **argv)
           while(pworddist = gnrcheap_getmin(pheap))
           {
               if(pworddist->edit_dist <= settings.editdist_threshold) {
-                  fprintf(stdout,"%s\t=>\t%s\tedit-dist=%d\n", 
-                          userword, 
-                          pworddist->dict_word,
-                          pworddist->edit_dist);
+                  if(!settings.verbose) {
+                      fprintf(stdout,"%s\n",pworddist->dict_word);
+                  }
+                  else {
+                      fprintf(stdout,"%s\t=>\t%-15s\tedit-dist=%d\n", 
+                              userword, 
+                              pworddist->dict_word,
+                              pworddist->edit_dist);
+                  }
+                  gnrcheap_delmin(pheap,NULL);
+              } 
+              else {
+                  break;
               }
-              gnrcheap_delmin(pheap,NULL);
           }
       }
   }

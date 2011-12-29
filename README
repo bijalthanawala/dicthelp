@@ -1,20 +1,21 @@
 Project: dicthelp
-Intention: Refer the dictionary and suggests correct word(s) for 
-           a given misspelled word
+Description: Refer the dictionary and suggests correct word(s) for 
+             a given misspelled word
 Start Date: 16th Dec 2011
 Language: C
 
 
 Usage: dicthelp [OPTION]... [word]
-Refers the dictionary and suggests correctly spelled words(s) for a given (misspelled) word.
 
+Refers the dictionary and suggests correctly spelled words(s) for a given (misspelled) word.
 If the word is not supplied on the command-line, it is read through stdin
+
 Options:
         -d <dictionary>
            Specify name of the dictionary to look up the
            word/suggestions into
            *Default dictionary = /usr/share/dict/words
-        -s [r|a]
+        -s <r|a>
            Set sort order of the output
            r  sorts suggested words according to the relevancy (edit-distance)
            a  sorts suggested words alphabetically
@@ -23,16 +24,18 @@ Options:
            Show suggestions (similarly spelled words) even if the supplied word is
            spelled correctly.
            *By default -f is not in effect.
+        -v Enable verbose output   
         -h Show this help
 Advanced Options:
-        -t n
-           Set max edit-distance threshold
-           n is edit-distance (a numeric value)
+        -e n
+           Set max edit-distance threshold.
+           n is edit-distance (a numeric value).
            Only suggestions with edit-distance less than or equal to n will be shown
-           Higher the value of n, more suggestions (with reduced relevancy)
-           *Default threshold value is 2
- EXAMPLES:
+           Higher the value of n, more the suggestions (with reducing relevancy)
+           *Default edit-distance threshold =  2
+ SOME EXAMPLES:
  dicthelp happyness
- dicthelp -t 3 happyness
- dicthelp -t 3 -sa happyness
+ dicthelp -e3 happyness
+ dicthelp -e3 -sa happyness
+ dicthelp -e1 -f happy
 

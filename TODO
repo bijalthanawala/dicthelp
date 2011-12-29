@@ -1,15 +1,23 @@
-TODO
+Project: dicthelp
+=================
+
+TODO (unprioritized)
+-------------------    
+* Provide a commandline-option to specify an edit-distance value,
+  and only suggestions with exactly specified distance would be shown.
+* Provide an option for the user to specify number of suggestions to show
+  (regardless of edit-distance)
 * Expand this one to read and spell-check an entire text document
-* Support looking up into more than one dictionary
-* Instead of a rigid default thresheold, adjust the threshold 
+* Support looking up into more than one dictionaries
+* Instead of a rigid default threshold, adjust the threshold 
   or the number of suggestions automatically
 * Make separate Makefile target - debug
 * Make separate Makefile target - unittest
 * ONGOING - Meaningful comments
-* Make output less geeky
 
 
 DONE
+----
 * DONE - Show all dictionary words with edit distance <= THRESHOLD_EDIT_DISTANCE
 * DONE - Command line: Support THRESHOLD_EDIT_DISTANCE 
 * DONE - Create Makefile
@@ -19,3 +27,4 @@ DONE
 * DONE - Add all dictionary words in the min-heap (key = edit distance)
 * DONE - Command line: Support dictionary name
 * DONE - Read the word from stdin if not supplied on the commandline
+* DONE - Make output less geeky (Verbose support introduced)

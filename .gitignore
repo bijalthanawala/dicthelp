@@ -3,3 +3,6 @@ core
 *.swp
 dicthelp
 *.o
+delme*
+*.delme
+
