@@ -7,8 +7,9 @@ Language: C
 
 Usage: dicthelp [OPTION]... [word]
 
-Refers the dictionary and suggests correctly spelled words(s) for a given (misspelled) word.
-If the word is not supplied on the command-line, it is read through stdin
+Refers the dictionary and suggests correctly spelled words(s) for a given 
+(misspelled) word. If the word is not supplied on the command-line, it is 
+read through stdin
 
 Options:
         -d <dictionary>
@@ -21,8 +22,8 @@ Options:
            a  sorts suggested words alphabetically
            *Default sort order = r
         -f Force suggestions.
-           Show suggestions (similarly spelled words) even if the supplied word is
-           spelled correctly.
+           Show suggestions (similarly spelled words) even if the supplied 
+           word is spelled correctly.
            *By default -f is not in effect.
         -v Enable verbose output   
         -h Show this help
@@ -30,8 +31,9 @@ Advanced Options:
         -e n
            Set max edit-distance threshold.
            n is edit-distance (a numeric value).
-           Only suggestions with edit-distance less than or equal to n will be shown
-           Higher the value of n, more the suggestions (with reducing relevancy)
+           Only suggestions with edit-distance less than or equal to n will 
+           be shown. Higher the value of n, more the suggestions (with reducing 
+           relevancy)
            *Default edit-distance threshold =  2
  SOME EXAMPLES:
  dicthelp happyness
